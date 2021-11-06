@@ -1,5 +1,3 @@
-# Versão do Ubuntu
-dist: focal
 
 # Linguagem Utilizada para Desenvolver a Aplicação
 language: python
@@ -8,25 +6,44 @@ language: python
 python:
   - "3.8"
 
+# Versão do Ubuntu
+dist: focal
+os: linux
+
 addons:
   sonarcloud:
     organization: rafaellinos
     token: ${SONAR_TOKEN}
 
-# Instalação de Módulos que são necessários para a Aplicação.
-install:
-  - pip install -r requirements-test.txt
+jobs:
+  include:
+    - stage: Build & Tests
+      name: "Unit Test, Quality & Security"
 
-# Defini o script de Teste que deve rodar toda vez que o código for alterado.
-script:
-  - pytest -vv || travis_terminate 1;
-  - sonar-scanner || travis_terminate 1;
+      # Instalação de Módulos que são necessários para a Aplicação.
+      install:
+        - pip install -r requirements-test.txt
 
-# Definir o Deploy no Heroku
-deploy:
-  provider: heroku
-  api_key: $HEROKU_API_KEY
-  edge: true 
-  app: devopslab-rafael
-  on:
-    branch: main
+      # Defini o script de Teste que deve rodar toda vez que o código for alterado.
+      script:
+        - pytest -vv || travis_terminate 1;
+        - sonar-scanner || travis_terminate 1;
+
+    - stage: Stage Deploy
+      name: Heroku Deploy
+      script: skip
+
+      # Definir o Deploy no Heroku
+      deploy:
+        provider: heroku
+        strategy: api
+        api_key: $HEROKU_API_KEY
+        edge: true
+        app: devopslab-rafael
+        on:
+          branch: main
+    
+    - stage: Stage Test
+      name: GET URL Stage
+      script:
+        - curl https://devopslab-rafael.herokuapp.com | grep DevOps || travis_terminate 1;
