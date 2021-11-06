@@ -15,6 +15,9 @@ addons:
     organization: rafaellinos
     token: ${SONAR_TOKEN}
 
+before_install:
+  - openssl aes-256-cbc -K $encrypted_4e798a0779bf_key -iv $encrypted_4e798a0779bf_iv -in gcpkey.json.enc -out gcpkey.json -d
+
 jobs:
   include:
     - stage: Build & Tests
@@ -47,3 +50,20 @@ jobs:
       name: GET URL Stage
       script:
         - curl https://devopslab-rafael.herokuapp.com | grep DevOps || travis_terminate 1;
+
+    - stage: Production Deploy
+      name: Google Api Engine
+      script: skip
+
+            # Definir o Deploy no Google Cloud
+      deploy:
+        provider: gae
+        keyfile: ../gcpkey.json
+        project: high-splicer-329914
+        on:
+          branch: main
+    
+    - stage: Production Test
+      name: GET URL Production
+      script:
+        - curl https://high-splicer-329914.uc.r.appspot.com | grep DevOps || travis_terminate 1;
